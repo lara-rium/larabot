@@ -1,4 +1,4 @@
-defmodule Color do
+defmodule Larabot.Color do
   def blurple, do: 0x5865F2
   def dark_blurple, do: 0x19175C
   def light_blurple, do: 0xE0E3FF

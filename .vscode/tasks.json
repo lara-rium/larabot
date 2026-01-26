@@ -3,13 +3,23 @@
   "tasks": [
     {
       "command": "mix compile && mix dialyzer && mix credo --strict",
-      "label": "lint",
+      "label": "mix: Lint",
       "presentation": {
         "clear": true,
         "focus": true
       },
       "problemMatcher": [],
       "type": "shell"
+    },
+    {
+      "label": "mix: Get deps",
+      "presentation": {
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": [],
+      "task": "Get deps",
+      "type": "mix"
     }
   ]
 }
