@@ -15,5 +15,7 @@ defmodule Larabot.Error do
     {:error, err}
   end
 
+  def handle({:ok, value}, _), do: value
+
   def handle(value, _), do: value
 end
