@@ -1,6 +1,7 @@
 *.ez
 /_build/
 /.elixir_ls/
+/config/runtime.exs
 /cover/
 /deps/
 /doc/
