@@ -2,6 +2,7 @@ require Protocol
 Protocol.derive(Jason.Encoder, Nostrum.Struct.Message.Attachment)
 Protocol.derive(Jason.Encoder, Nostrum.Struct.Message.Component)
 
+# credo:disable-for-next-line Credo.Check.Refactor.ModuleDependencies
 defmodule Larabot.Impersonate do
   alias Larabot.Error
   alias Nostrum.Api.Webhook
@@ -17,18 +18,13 @@ defmodule Larabot.Impersonate do
   end
 
   def clone_file(index, attachment, message_id) do
-    # TODO: keep filename the same, it appears on client
-    filename = to_string(message_id) <> attachment.filename
+    dir = Path.join(System.tmp_dir!(), to_string(message_id))
+    File.mkdir_p!(dir)
+    path = Path.join(dir, attachment.filename)
 
-    temp_path =
-      Path.join(
-        System.tmp_dir!(),
-        filename
-      )
+    Req.get!(attachment.url, into: File.stream!(path), http_errors: :raise)
 
-    Req.get!(attachment.url, into: File.stream!(temp_path), http_errors: :raise)
-
-    {temp_path, %{attachment | id: index, filename: filename, url: nil, proxy_url: nil}}
+    {path, %{attachment | id: index, url: nil, proxy_url: nil}}
   end
 
   def impersonate(message, clone_files \\ false) do
