@@ -27,6 +27,13 @@ defmodule Larabot.Impersonate do
     {path, %{attachment | id: index, url: nil, proxy_url: nil}}
   end
 
+  def prepend_reference(content, message_reference) do
+    reference_link =
+      "https://discord.com/channels/#{message_reference.guild_id}/#{message_reference.channel_id}/#{message_reference.message_id}"
+
+    "-# *↪︎ #{reference_link}*\n#{content}"
+  end
+
   def impersonate(message, clone_files \\ false) do
     webhook = Larabot.Webhook.get_or_create(message.channel_id)
 
@@ -41,7 +48,12 @@ defmodule Larabot.Impersonate do
     avatar_url =
       Member.avatar_url(message.member, message.guild_id) || User.avatar_url(message.author)
 
-    # TODO: support message_reference
+    content =
+      if message.referenced_message do
+        prepend_reference(message.content, message.message_reference)
+      else
+        message.content
+      end
 
     webhook.id
     |> Webhook.execute(
@@ -52,7 +64,7 @@ defmodule Larabot.Impersonate do
         # TODO: test components v2
         components: message.components,
         # TODO: check message content below limit
-        content: message.content,
+        content: content,
         files: files,
         embeds: message.embeds,
         # TODO: test this for nick
@@ -64,7 +76,7 @@ defmodule Larabot.Impersonate do
         # TODO: test this
         flags: Map.get(message, :flags, 0),
         # TODO: test this
-        allowed_mentions: Map.get(message, :allowed_mentions, nil),
+        allowed_mentions: Map.get(message, :allowed_mentions, :all),
         # TODO: test this
         poll: message.poll,
         # TODO: test this

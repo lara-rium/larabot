@@ -29,7 +29,8 @@ defmodule Larabot.ImpersonateTest do
       |> Error.handle()
 
     Nostrum.Api.Message.create(channel_id,
-      content: "this message should be impersonated exactly the same way",
+      content:
+        "this message should be impersonated exactly the same way *(except for reference)*",
       files: [
         %{
           name: "file1.txt",
@@ -67,7 +68,7 @@ defmodule Larabot.ImpersonateTest do
 
     Larabot.Impersonate.impersonate(message, true) |> Error.handle()
 
-    new_message = %{message | content: message.content <> "\n*clone files set to false*"}
+    new_message = %{message | content: message.content <> "\n*(clone files set to false)*"}
     Larabot.Impersonate.impersonate(new_message) |> Error.handle()
   end
 end
