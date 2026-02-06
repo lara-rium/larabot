@@ -10,11 +10,15 @@ defmodule Larabot.Impersonate do
   alias Nostrum.Struct.User
 
   def clone_files(attachments, message_id) do
+    if Enum.any?(attachments, &(&1.size > 10 * 1024 * 1024)),
+      do: {:error, :attachment_too_large},
+      else: do_clone_files(attachments, message_id)
+  end
+
+  defp do_clone_files(attachments, message_id) do
     attachments
     |> Enum.with_index()
-    |> Enum.map(fn {attachment, index} ->
-      clone_file(index, attachment, message_id)
-    end)
+    |> Enum.map(fn {attachment, index} -> clone_file(index, attachment, message_id) end)
   end
 
   def clone_file(index, attachment, message_id) do
@@ -59,7 +63,6 @@ defmodule Larabot.Impersonate do
     |> Webhook.execute(
       webhook.token,
       %{
-        # TODO: check attachment size below limit
         attachments: attachments,
         # TODO: test components v2
         components: message.components,
