@@ -1,6 +1,7 @@
 *.ez
 /_build/
 /.elixir_ls/
+/.vscode/temp.exs
 /config/runtime.exs
 /cover/
 /deps/

@@ -10,6 +10,16 @@
       },
       "problemMatcher": [],
       "type": "shell"
+    },
+    {
+      "command": "mix run .vscode/temp.exs",
+      "label": "mix: Run temporary file",
+      "presentation": {
+        "clear": true,
+        "focus": true
+      },
+      "problemMatcher": [],
+      "type": "shell"
     }
   ]
 }
