@@ -5,7 +5,9 @@
       files: %{
         included: [
           "lib/",
+          "test/",
           "config/",
+          ".vscode/",
           ".credo.exs",
           ".formatter.exs",
           "mix.exs"
