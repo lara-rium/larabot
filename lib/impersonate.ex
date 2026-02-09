@@ -9,13 +9,26 @@ defmodule Larabot.Impersonate do
   alias Nostrum.Struct.Guild.Member
   alias Nostrum.Struct.User
 
-  def clone_files(attachments, message_id) do
-    if Enum.any?(attachments, &(&1.size > 10 * 1024 * 1024)),
-      do: {:error, :attachment_too_large},
-      else: do_clone_files(attachments, message_id)
+  def validate_components(components) do
+    if Enum.any?(
+         components,
+         fn c ->
+           c
+           |> Map.from_struct()
+           |> Map.drop([:type])
+           |> Map.values()
+           |> Enum.all?(&is_nil/1)
+         end
+       ), do: {:error, :components_v2_not_supported}, else: :ok
   end
 
-  defp do_clone_files(attachments, message_id) do
+  def validate_attachments(attachments) do
+    if Enum.any?(attachments, &(&1.size > 10 * 1024 * 1024)),
+      do: {:error, :attachment_too_large},
+      else: :ok
+  end
+
+  def clone_files(attachments, message_id) do
     attachments
     |> Enum.with_index()
     |> Enum.map(fn {attachment, index} -> clone_file(index, attachment, message_id) end)
@@ -38,7 +51,15 @@ defmodule Larabot.Impersonate do
     "-# *↪︎ #{reference_link}*\n#{content}"
   end
 
+  # TODO: instead of a bool for clone_files allow passing of what to do if files exist: error, clone, or ignore
   def impersonate(message, clone_files \\ false) do
+    with :ok <- validate_components(message.components),
+         :ok <- if(clone_files, do: validate_attachments(message.attachments), else: :ok) do
+      do_impersonate(message, clone_files)
+    end
+  end
+
+  def do_impersonate(message, clone_files) do
     webhook = Larabot.Webhook.get_or_create(message.channel_id)
 
     {files, attachments} =
@@ -64,7 +85,6 @@ defmodule Larabot.Impersonate do
       webhook.token,
       %{
         attachments: attachments,
-        # TODO: test components v2
         components: message.components,
         # TODO: check message content below limit
         content: content,
@@ -76,7 +96,6 @@ defmodule Larabot.Impersonate do
         avatar_url: avatar_url,
         # TODO: test this
         tts: message.tts,
-        # TODO: test this
         flags: Map.get(message, :flags, 0),
         # TODO: test this
         allowed_mentions: Map.get(message, :allowed_mentions, :all),

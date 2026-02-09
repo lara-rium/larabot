@@ -1,7 +1,10 @@
 defmodule Larabot.ImpersonateTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   use Nostrum.Consumer
+
+  alias Larabot.Component
   alias Larabot.Error
+  alias Nostrum.Api.Message
 
   @nonce "impersonate test"
   @process :impersonate_test
@@ -12,35 +15,58 @@ defmodule Larabot.ImpersonateTest do
     end
   end
 
+  def test_impersonate(message_options) do
+    Process.register(self(), @process)
+
+    channel_id = Application.fetch_env!(:larabot, :channel_id)
+
+    referenced_message =
+      channel_id
+      |> Message.create("reference message for impersonation test")
+      |> Error.handle!()
+
+    channel_id
+    |> Message.create(
+      message_options ++
+        [
+          files: [
+            %{
+              name: "file1.txt",
+              body: "test file 1\n"
+            },
+            %{
+              name: "file2.txt",
+              body: "test file 2\n"
+            }
+          ],
+          message_reference: %{message_id: referenced_message.id},
+          nonce: @nonce
+        ]
+    )
+    |> Error.handle!()
+
+    assert_receive message
+
+    message
+    |> Larabot.Impersonate.impersonate(true)
+    |> Error.handle!()
+
+    new_message = %{message | content: message.content <> "\n*(clone files set to false)*"}
+
+    new_message
+    |> Larabot.Impersonate.impersonate()
+    |> Error.handle!()
+  end
+
   setup do
     start_supervised!(__MODULE__)
     :ok
   end
 
   test "impersonate works" do
-    Process.register(self(), @process)
-
-    channel_id = Application.fetch_env!(:larabot, :channel_id)
-
-    referenced_message =
-      Nostrum.Api.Message.create(channel_id,
-        content: "reference message for impersonation test"
-      )
-      |> Error.handle()
-
-    Nostrum.Api.Message.create(channel_id,
+    test_impersonate(
       content:
         "this message should be impersonated exactly the same way *(except for reference)*",
-      files: [
-        %{
-          name: "file1.txt",
-          body: "test file 1\n"
-        },
-        %{
-          name: "file2.txt",
-          body: "test file 2\n"
-        }
-      ],
       embeds: [
         %{
           description: "test embed 1"
@@ -58,17 +84,22 @@ defmodule Larabot.ImpersonateTest do
             }
           ]
         }
-      ],
-      message_reference: %{message_id: referenced_message.id},
-      nonce: @nonce
+      ]
     )
-    |> Error.handle()
+  end
 
-    assert_receive message
-
-    Larabot.Impersonate.impersonate(message, true) |> Error.handle()
-
-    new_message = %{message | content: message.content <> "\n*(clone files set to false)*"}
-    Larabot.Impersonate.impersonate(new_message) |> Error.handle()
+  test "impersonate errors with components v2" do
+    assert_raise RuntimeError, ":components_v2_not_supported", fn ->
+      test_impersonate(
+        components: [
+          Component.text(
+            "this message should be impersonated exactly the same way *(except for reference)*"
+          ),
+          Component.file("file1.txt"),
+          Component.file("file2.txt")
+        ],
+        flags: Component.v2_flag()
+      )
+    end
   end
 end
