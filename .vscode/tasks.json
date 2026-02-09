@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "command": "mix credo --strict",
+      "command": "mix credo",
       "label": "mix: Credo",
       "presentation": {
         "clear": true,
