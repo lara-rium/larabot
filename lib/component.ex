@@ -30,6 +30,15 @@ defmodule Larabot.Component do
     %{type: 12, items: Enum.map(media_urls, &%{media: %{url: &1}})}
   end
 
+  def file(name, spoiler \\ false, id \\ nil) do
+    %{
+      type: 13,
+      id: id,
+      file: %{url: "attachment://#{name}"},
+      spoiler: spoiler
+    }
+  end
+
   def container(components) do
     %{
       type: 17,
