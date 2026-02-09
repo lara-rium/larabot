@@ -3,8 +3,10 @@ defmodule Larabot.Component do
 
   alias Nostrum.Api.Message
 
+  def v2_flag, do: 1 <<< 15
+
   def create_message(channel_id, components) do
-    Message.create(channel_id, %{components: components, flags: 1 <<< 15})
+    Message.create(channel_id, %{components: components, flags: v2_flag()})
   end
 
   def section(media_url, components) do
