@@ -16,7 +16,7 @@ defmodule Larabot.Interactions do
 
       def register do
         guild_id = Application.get_env(@app, :guild_id)
-        commands = Enum.map(commands(), fn cmd -> cmd.command() end)
+        commands = Enum.map(commands(), &1.command())
 
         if guild_id do
           guild_id
@@ -36,9 +36,7 @@ defmodule Larabot.Interactions do
 
       def handle(interaction) do
         command =
-          Enum.find(commands(), fn cmd ->
-            cmd.name() == interaction.data.name
-          end)
+          Enum.find(commands(), &1.name() == interaction.data.name)
 
         command.handle(interaction)
       end
