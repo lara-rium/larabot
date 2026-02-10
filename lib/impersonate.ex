@@ -38,6 +38,14 @@ defmodule Larabot.Impersonate do
     :ok
   end
 
+  def validate_content(content) do
+    if content
+       |> :unicode.characters_to_binary(:utf8, {:utf16, :big})
+       |> byte_size()
+       |> div(2) > 2000, do: {:error, :content_too_long}, else: :ok
+  end
+
+  # TODO: add "ask" to files_behavior, asks cmd author what they wanna do in case of an attachment
   def clone_files(attachments, message_id) do
     attachments
     |> Enum.with_index()
@@ -65,7 +73,8 @@ defmodule Larabot.Impersonate do
     opts = Keyword.merge([files_behavior: :error, delete_original: false], opts)
 
     with :ok <- validate_components(message.components),
-         :ok <- validate_attachments(message.attachments, opts[:files_behavior]) do
+         :ok <- validate_attachments(message.attachments, opts[:files_behavior]),
+         :ok <- validate_content(message.content) do
       do_impersonate(message, opts)
     end
   end
@@ -98,7 +107,6 @@ defmodule Larabot.Impersonate do
              %{
                attachments: attachments,
                components: message.components,
-               # TODO: check message content below limit
                content: content,
                files: files,
                embeds: message.embeds,
