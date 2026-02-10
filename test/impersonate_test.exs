@@ -92,9 +92,7 @@ defmodule Larabot.ImpersonateTest do
     assert_raise RuntimeError, ":components_v2_not_supported", fn ->
       test_impersonate(
         components: [
-          Component.text(
-            "this message should be impersonated exactly the same way *(except for reference)*"
-          ),
+          Component.text("this message can't be impersonated because it has components v2"),
           Component.file("file1.txt"),
           Component.file("file2.txt")
         ],
