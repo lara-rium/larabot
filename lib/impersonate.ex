@@ -4,7 +4,7 @@ Protocol.derive(Jason.Encoder, Nostrum.Struct.Message.Component)
 
 # credo:disable-for-next-line Credo.Check.Refactor.ModuleDependencies
 defmodule Larabot.Impersonate do
-  alias Larabot.Error
+  alias Nostrum.Api.Message
   alias Nostrum.Api.Webhook
   alias Nostrum.Struct.Guild.Member
   alias Nostrum.Struct.User
@@ -61,21 +61,20 @@ defmodule Larabot.Impersonate do
     "-# *↪︎ #{reference_link}*\n#{content}"
   end
 
-  # TODO: add option to delete original
   def impersonate(message, opts \\ []) do
-    files_behavior = Keyword.get(opts, :files_behavior, :error)
+    opts = Keyword.merge([files_behavior: :error, delete_original: false], opts)
 
     with :ok <- validate_components(message.components),
-         :ok <- validate_attachments(message.attachments, files_behavior) do
-      do_impersonate(message, files_behavior)
+         :ok <- validate_attachments(message.attachments, opts[:files_behavior]) do
+      do_impersonate(message, opts)
     end
   end
 
-  def do_impersonate(message, files_behavior) do
+  def do_impersonate(message, opts) do
     webhook = Larabot.Webhook.get_or_create(message.channel_id)
 
     {files, attachments} =
-      if files_behavior == :clone,
+      if opts[:files_behavior] == :clone,
         do:
           message.attachments
           |> clone_files(message.id)
@@ -92,33 +91,34 @@ defmodule Larabot.Impersonate do
         message.content
       end
 
-    webhook.id
-    |> Webhook.execute(
-      webhook.token,
-      %{
-        attachments: attachments,
-        components: message.components,
-        # TODO: check message content below limit
-        content: content,
-        files: files,
-        embeds: message.embeds,
-        # TODO: test this for nick
-        username: message.member.nick || message.author.username,
-        # TODO: test this for guild avatar
-        avatar_url: avatar_url,
-        # TODO: test this
-        tts: message.tts,
-        flags: Map.get(message, :flags, 0),
-        # TODO: test this
-        allowed_mentions: Map.get(message, :allowed_mentions, :all),
-        # TODO: test this
-        poll: message.poll,
-        # TODO: test this
-        thread_name: message.thread && message.thread.name,
-        # TODO: test this
-        thread_tags: message.thread && message.thread.applied_tags
-      }
-    )
-    |> Error.handle()
+    with :ok <-
+           Webhook.execute(
+             webhook.id,
+             webhook.token,
+             %{
+               attachments: attachments,
+               components: message.components,
+               # TODO: check message content below limit
+               content: content,
+               files: files,
+               embeds: message.embeds,
+               # TODO: test this for nick
+               username: message.member.nick || message.author.username,
+               # TODO: test this for guild avatar
+               avatar_url: avatar_url,
+               # TODO: test this
+               tts: message.tts,
+               flags: Map.get(message, :flags, 0),
+               # TODO: test this
+               allowed_mentions: Map.get(message, :allowed_mentions, :all),
+               # TODO: test this
+               poll: message.poll,
+               # TODO: test this
+               thread_name: message.thread && message.thread.name,
+               # TODO: test this
+               thread_tags: message.thread && message.thread.applied_tags
+             }
+           ),
+         do: if(opts[:delete_original], do: Message.delete(message.id))
   end
 end

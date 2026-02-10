@@ -51,10 +51,15 @@ defmodule Larabot.ImpersonateTest do
     |> Larabot.Impersonate.impersonate(files_behavior: :clone)
     |> Error.handle!()
 
-    new_message = %{message | content: message.content <> "\n*(clone files set to ignore)*"}
+    opts = [files_behavior: :ignore, delete_original: true]
+
+    new_message = %{
+      message
+      | content: message.content <> "\n```ex\n#{inspect(opts)}\n```"
+    }
 
     new_message
-    |> Larabot.Impersonate.impersonate(files_behavior: :ignore)
+    |> Larabot.Impersonate.impersonate(opts)
     |> Error.handle!()
   end
 
