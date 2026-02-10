@@ -48,13 +48,13 @@ defmodule Larabot.ImpersonateTest do
     assert_receive message
 
     message
-    |> Larabot.Impersonate.impersonate(true)
+    |> Larabot.Impersonate.impersonate(files_behavior: :clone)
     |> Error.handle!()
 
-    new_message = %{message | content: message.content <> "\n*(clone files set to false)*"}
+    new_message = %{message | content: message.content <> "\n*(clone files set to ignore)*"}
 
     new_message
-    |> Larabot.Impersonate.impersonate()
+    |> Larabot.Impersonate.impersonate(files_behavior: :ignore)
     |> Error.handle!()
   end
 

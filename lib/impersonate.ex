@@ -22,10 +22,20 @@ defmodule Larabot.Impersonate do
        ), do: {:error, :components_v2_not_supported}, else: :ok
   end
 
-  def validate_attachments(attachments) do
-    if Enum.any?(attachments, &(&1.size > 10 * 1024 * 1024)),
-      do: {:error, :attachment_too_large},
-      else: :ok
+  def validate_attachments(attachments, files_behavior) do
+    case files_behavior do
+      :error ->
+        if attachments != [], do: {:error, :attachment_exists}
+
+      :clone ->
+        if Enum.any?(attachments, &(&1.size > 10 * 1024 * 1024)),
+          do: {:error, :attachment_too_large}
+
+      _ ->
+        nil
+    end
+
+    :ok
   end
 
   def clone_files(attachments, message_id) do
@@ -51,19 +61,21 @@ defmodule Larabot.Impersonate do
     "-# *↪︎ #{reference_link}*\n#{content}"
   end
 
-  # TODO: instead of a bool for clone_files allow passing of what to do if files exist: error, clone, or ignore
-  def impersonate(message, clone_files \\ false) do
+  # TODO: add option to delete original
+  def impersonate(message, opts \\ []) do
+    files_behavior = Keyword.get(opts, :files_behavior, :error)
+
     with :ok <- validate_components(message.components),
-         :ok <- if(clone_files, do: validate_attachments(message.attachments), else: :ok) do
-      do_impersonate(message, clone_files)
+         :ok <- validate_attachments(message.attachments, files_behavior) do
+      do_impersonate(message, files_behavior)
     end
   end
 
-  def do_impersonate(message, clone_files) do
+  def do_impersonate(message, files_behavior) do
     webhook = Larabot.Webhook.get_or_create(message.channel_id)
 
     {files, attachments} =
-      if clone_files,
+      if files_behavior == :clone,
         do:
           message.attachments
           |> clone_files(message.id)
