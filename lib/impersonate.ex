@@ -115,11 +115,8 @@ defmodule Larabot.Impersonate do
                embeds: message.embeds,
                username: message.member.nick || message.author.username,
                avatar_url: avatar_url,
-               # TODO: test this
                tts: message.tts,
                flags: Map.get(message, :flags, 0),
-               # TODO: test this
-               allowed_mentions: Map.get(message, :allowed_mentions, :all),
                # TODO: test this
                poll: message.poll,
                # TODO: test this

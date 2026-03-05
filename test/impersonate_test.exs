@@ -40,7 +40,8 @@ defmodule Larabot.ImpersonateTest do
             }
           ],
           message_reference: %{message_id: referenced_message.id},
-          nonce: @nonce
+          nonce: @nonce,
+          tts: true
         ]
     )
     |> Error.handle!()
