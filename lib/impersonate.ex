@@ -90,8 +90,11 @@ defmodule Larabot.Impersonate do
           |> Enum.unzip(),
         else: {[], []}
 
+    message = put_in(message.member.user_id, message.author.id)
+
     avatar_url =
-      Member.avatar_url(message.member, message.guild_id) || User.avatar_url(message.author)
+      Member.avatar_url(message.member, message.guild_id) ||
+        User.avatar_url(message.author)
 
     content =
       if message.referenced_message do
@@ -110,9 +113,7 @@ defmodule Larabot.Impersonate do
                content: content,
                files: files,
                embeds: message.embeds,
-               # TODO: test this for nick
                username: message.member.nick || message.author.username,
-               # TODO: test this for guild avatar
                avatar_url: avatar_url,
                # TODO: test this
                tts: message.tts,
