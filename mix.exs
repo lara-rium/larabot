@@ -16,7 +16,7 @@ defmodule Larabot.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:exsync, "~> 0.4", only: :dev},
       {:nostrum, "~> 0.10"},
-      {:req, "~> 0.5.0"}
+      {:req, "~> 0.6.2"}
     ]
   end
 end
