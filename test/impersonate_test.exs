@@ -6,11 +6,44 @@ defmodule Larabot.ImpersonateTest do
   alias Larabot.Error
   alias Nostrum.Api.Message
 
-  @nonce "impersonate test"
   @process :impersonate_test
 
+  @message_options [
+    content: "this message should be impersonated exactly the same way ",
+    components: [
+      %{
+        type: 1,
+        components: [
+          %{
+            type: 2,
+            style: 5,
+            label: "Test Button",
+            url: "https://lara.lv"
+          }
+        ]
+      }
+    ],
+    files: [
+      %{
+        name: "file1.txt",
+        body: "test file 1\n"
+      },
+      %{
+        name: "file2.txt",
+        body: "test file 2\n"
+      }
+    ],
+    nonce: "impersonate test",
+    tts: true,
+    embeds: [
+      %{
+        description: "test embed 1"
+      }
+    ]
+  ]
+
   def handle_event({:MESSAGE_CREATE, message, _}) do
-    if message.nonce == @nonce do
+    if message.nonce == @message_options[:nonce] do
       send(@process, message)
     end
   end
@@ -25,25 +58,14 @@ defmodule Larabot.ImpersonateTest do
       |> Message.create("reference message for impersonation test")
       |> Error.handle!()
 
+    message_options =
+      Keyword.merge(
+        @message_options,
+        [message_reference: %{message_id: referenced_message.id}] ++ message_options
+      )
+
     channel_id
-    |> Message.create(
-      message_options ++
-        [
-          files: [
-            %{
-              name: "file1.txt",
-              body: "test file 1\n"
-            },
-            %{
-              name: "file2.txt",
-              body: "test file 2\n"
-            }
-          ],
-          message_reference: %{message_id: referenced_message.id},
-          nonce: @nonce,
-          tts: true
-        ]
-    )
+    |> Message.create(message_options)
     |> Error.handle!()
 
     assert_receive message
@@ -69,28 +91,9 @@ defmodule Larabot.ImpersonateTest do
     :ok
   end
 
-  test "impersonate works" do
+  test "impersonate works with content, embeds and components" do
     test_impersonate(
-      content:
-        "this message should be impersonated exactly the same way *(except for reference)*",
-      embeds: [
-        %{
-          description: "test embed 1"
-        }
-      ],
-      components: [
-        %{
-          type: 1,
-          components: [
-            %{
-              type: 2,
-              style: 5,
-              label: "Test Button",
-              url: "https://lara.lv"
-            }
-          ]
-        }
-      ]
+      content: "this message should be impersonated exactly the same way *(except for reference)*"
     )
   end
 
@@ -102,8 +105,20 @@ defmodule Larabot.ImpersonateTest do
           Component.file("file1.txt"),
           Component.file("file2.txt")
         ],
-        flags: Component.v2_flag()
+        flags: Component.v2_flag(),
+        content: nil,
+        embeds: []
       )
     end
+  end
+
+  test "impersonate works with poll" do
+    test_impersonate(
+      poll: %{
+        question: %{text: "impersonate poll question"},
+        answers: [%{poll_media: %{text: "impersonate poll answer"}}]
+      },
+      files: []
+    )
   end
 end
