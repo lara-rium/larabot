@@ -79,8 +79,9 @@ defmodule Larabot.Impersonate do
     end
   end
 
-  def do_impersonate(message, opts) do
-    webhook = Larabot.Webhook.get_or_create(message.channel_id)
+  # TODO: change should-be private functions to defp
+  defp do_impersonate(message, opts) do
+    {webhook, webhook_info} = Larabot.Webhook.get_or_create(message.channel_id)
 
     {files, attachments} =
       if opts[:files_behavior] == :clone,
@@ -108,6 +109,7 @@ defmodule Larabot.Impersonate do
              webhook.id,
              webhook.token,
              %{
+               thread_id: webhook_info[:thread_id],
                attachments: attachments,
                components: message.components,
                content: content,
@@ -117,7 +119,7 @@ defmodule Larabot.Impersonate do
                avatar_url: avatar_url,
                tts: message.tts,
                flags: Map.get(message, :flags, 0),
-               # TODO: test this
+               # TODO: test impersonating ended polls, here's one: 1044365513968595004-1523109354075848765
                poll: message.poll,
                # TODO: test this
                thread_name: message.thread && message.thread.name,

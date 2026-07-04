@@ -1,3 +1,4 @@
+# credo:disable-for-next-line Credo.Check.Refactor.ModuleDependencies
 defmodule Larabot.ImpersonateTest do
   use ExUnit.Case, async: false
   use Nostrum.Consumer
@@ -5,6 +6,7 @@ defmodule Larabot.ImpersonateTest do
   alias Larabot.Component
   alias Larabot.Error
   alias Nostrum.Api.Message
+  alias Nostrum.Api.Thread
 
   @process :impersonate_test
 
@@ -42,16 +44,20 @@ defmodule Larabot.ImpersonateTest do
     ]
   ]
 
+  def channel_id, do: Application.fetch_env!(:larabot, :channel_id)
+
   def handle_event({:MESSAGE_CREATE, message, _}) do
     if message.nonce == @message_options[:nonce] do
       send(@process, message)
     end
   end
 
-  def test_impersonate(message_options) do
+  def test_impersonate(message_options, opts \\ []) do
     Process.register(self(), @process)
 
-    channel_id = Application.fetch_env!(:larabot, :channel_id)
+    channel_id =
+      opts[:thread_id] ||
+        channel_id()
 
     referenced_message =
       channel_id
@@ -120,5 +126,16 @@ defmodule Larabot.ImpersonateTest do
       },
       files: []
     )
+  end
+
+  test "impersonate works in thread" do
+    message = channel_id() |> Message.create("thread starting message") |> Error.handle!()
+
+    thread =
+      channel_id()
+      |> Thread.create_with_message(message.id, %{name: "impersonate test thread"})
+      |> Error.handle!()
+
+    test_impersonate([], thread_id: thread.id)
   end
 end

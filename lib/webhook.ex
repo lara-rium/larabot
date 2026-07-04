@@ -4,19 +4,26 @@ defmodule Larabot.Webhook do
   alias Nostrum.Api.Webhook
 
   def get_or_create(channel_id) do
-    webhooks =
-      channel_id
-      |> Channel.webhooks()
-      |> Error.handle()
+    do_get_or_create(channel_id)
+  end
 
-    webhook = Enum.find(webhooks, & &1.token)
+  defp do_get_or_create(channel_id, thread_id \\ nil) do
+    case Channel.webhooks(channel_id) do
+      {:ok, webhooks} ->
+        {Enum.find(webhooks, & &1.token) ||
+           channel_id
+           |> Webhook.create(%{name: "Larabot", avatar: nil})
+           |> Error.handle(), %{thread_id: thread_id}}
 
-    if webhook do
-      webhook
-    else
-      channel_id
-      |> Webhook.create(%{name: "Larabot", avatar: nil})
-      |> Error.handle()
+      {:error, err} ->
+        if !thread_id && err.response.code == 10_003 do
+          thread =
+            channel_id
+            |> Channel.get()
+            |> Error.handle()
+
+          do_get_or_create(thread.parent_id, thread.id)
+        end
     end
   end
 end
